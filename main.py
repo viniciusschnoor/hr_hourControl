@@ -21,8 +21,8 @@ base_verify = os.path.exists(user['base'])
 sys_verify = [root_verify, base_verify]
 
 # FUNCTIONS
-def create_structure(id):
-    if id == 0:
+def create_structure(create):
+    if create:
         os.makedirs(user['root'])
     database = open(user['base'],'w+')
     header = 'id,enter_hour,pause_hour,return_hour,exit_hour,first_dur,pause_dur,second_dur,total_dur,extra_time'
@@ -37,8 +37,8 @@ match sys_verify:
     case [True, True]:
         pass
     case [True, False]:
-        create_structure(1)
+        create_structure(True)
     case _:
-        create_structure(0)
+        create_structure(False)
 
 print('FIM')
