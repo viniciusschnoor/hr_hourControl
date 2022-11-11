@@ -3,6 +3,7 @@ import getpass # Get user info
 import os # Verify directory and files
 import pandas as pd # Allow dataframes
 from datetime import datetime # Allow dates
+from tkinter import * # Support to window
 
 
 # - Start of confidential.py file ---------------------------------- #
@@ -65,6 +66,12 @@ match sys_verify:
         create_structure(False)
     case _:
         create_structure(True)
+
+# TESTE JANELA
+# window = Tk()
+# window.title('HR HourControl')
+# window.mainloop()
+# exit()
 
 # WHEN RUN, SET START HOUR
 database = pd.DataFrame(pd.read_csv(user['base']))
