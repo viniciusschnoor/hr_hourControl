@@ -1,6 +1,8 @@
 from confidential import credential
-import getpass
+import getpass # Get user info
 import os # Verify directory and files
+import pandas as pd # Allow dataframes
+from datetime import datetime # Allow dates
 
 
 # - Start of confidential.py file ---------------------------------- #
@@ -25,20 +27,94 @@ def create_structure(create):
     if create:
         os.makedirs(user['root'])
     database = open(user['base'],'w+')
-    header = 'id,enter_hour,pause_hour,return_hour,exit_hour,first_dur,pause_dur,second_dur,total_dur,extra_time'
-    first_content = list()
-    first_content.append(header)
-    first_content.append('\n1,,,,,,,,,')
-    database.writelines(first_content)
+    header = 'id,date,enter_hour,pause_hour,return_hour,exit_hour,first_dur,pause_dur,second_dur,total_dur,extra_time,comment'
+    database.write(header)
     database.close()
 
-# PROCESS
+def update_table(moment):
+    actual_date = datetime.now().strftime('%d/%m/%y')
+    actual_datetime = datetime.now().strftime('%d/%m/%y %H:%M:%S')
+    match moment:
+        case 'enter':
+            database.loc[new_id] = [f'{new_id}',f'{actual_date}',f'{actual_datetime}','','','','','','','','','']
+            database.to_csv(user['base'], index=False)
+        case 'pause':
+            database['pause_hour'][new_id] = actual_datetime
+            database['first_dur'][new_id] = pd.to_datetime(database['pause_hour'][new_id]) - pd.to_datetime(database['enter_hour'][new_id])
+            database.to_csv(user['base'], index=False)
+        case 'return':
+            database['return_hour'][new_id] = actual_datetime
+            database['pause_dur'][new_id] = pd.to_datetime(database['return_hour'][new_id]) - pd.to_datetime(database['pause_hour'][new_id])
+            database.to_csv(user['base'], index=False)
+        case 'exit':
+            database['exit_hour'][new_id] = actual_datetime
+            database['second_dur'][new_id] = pd.to_datetime(database['exit_hour'][new_id]) - pd.to_datetime(database['return_hour'][new_id])
+            database['total_dur'][new_id] = (pd.to_datetime(database['exit_hour'][new_id]) - pd.to_datetime(database['return_hour'][new_id])) + (pd.to_datetime(database['pause_hour'][new_id]) - pd.to_datetime(database['enter_hour'][new_id]))
+            if input('Deseja adicionar algum comentário?') != 'n':
+                comment = input('O que deseja destacar?\n')
+                database['comment'][new_id] = comment
+            database.to_csv(user['base'], index=False)
+
+
+# PROCESSES
+# VERIFY IF PATH AND FILES NEEDED EXISTS
 match sys_verify:
     case [True, True]:
         pass
     case [True, False]:
-        create_structure(True)
-    case _:
         create_structure(False)
+    case _:
+        create_structure(True)
 
-print('FIM')
+# WHEN RUN, SET START HOUR
+database = pd.DataFrame(pd.read_csv(user['base']))
+new_id = database.shape[0] + 1
+update_table('enter')
+print('\n\n- HR HOURCONTROL -------------------')
+print(getpass.getuser())
+print('ENTRADA: ',database['enter_hour'][new_id])
+print('------------------------------------\n\n')
+pause = 'n'
+while pause == 'n':
+    pause = input('Deseja realizar a sua pausa? (Y/n)')
+update_table('pause')
+print('\n\n- HR HOURCONTROL -------------------')
+print(getpass.getuser())
+print('ENTRADA:          ',database['enter_hour'][new_id])
+print('PAUSA:            ',database['pause_hour'][new_id])
+print('HORAS TRABALHADAS:',database['first_dur'][new_id])
+print('------------------------------------\n\n')
+back = 'n'
+while back == 'n':
+    back = input('Deseja retornar da pausa? (Y/n)')
+update_table('return')
+print('\n\n- HR HOURCONTROL -------------------')
+print(getpass.getuser())
+print('ENTRADA:          ',database['enter_hour'][new_id])
+print('PAUSA:            ',database['pause_hour'][new_id])
+print('HORAS TRABALHADAS:',database['first_dur'][new_id])
+print('------------------------------------')
+print('TEMPO DE PAUSA:   ',database['pause_dur'][new_id])
+print('------------------------------------')
+print('RETORNO DA PAUSA: ',database['return_hour'][new_id])
+print('------------------------------------\n\n')
+finish = 'n'
+while finish == 'n':
+    finish = input('Deseja finalizar o expediente? (Y/n)')
+update_table('exit')
+print('\n\n- HR HOURCONTROL -------------------')
+print(getpass.getuser())
+print('ENTRADA:          ',database['enter_hour'][new_id])
+print('PAUSA:            ',database['pause_hour'][new_id])
+print('HORAS TRABALHADAS:',database['first_dur'][new_id])
+print('------------------------------------')
+print('TEMPO DE PAUSA:   ',database['pause_dur'][new_id])
+print('------------------------------------')
+print('RETORNO DA PAUSA: ',database['return_hour'][new_id])
+print('SAÍDA:            ',database['exit_hour'][new_id])
+print('HORAS TRABALHADAS:',database['second_dur'][new_id])
+print('------------------------------------')
+print('TOTAL TRABALHADO :',database['total_dur'][new_id])
+print('------------------------------------\n\n')
+kronos_today = database.loc[new_id]
+print(kronos_today)
